@@ -23,7 +23,6 @@ namespace VCACommon
             }
                
             int length = BitConverter.ToInt32(buffer, 0);
-            Console.WriteLine(length);
 
             count = input.Read(FrameBuffer, 0, length);
             while(count < length)

@@ -50,17 +50,11 @@ namespace VCAServer
             {
                 while (true)
                 {
-
-                    TcpClient client = null;
-                    try
-                    {
-                        client = _tcpListener.AcceptTcpClient();//Get client connection
+                    TcpClient client = _tcpListener.AcceptTcpClient();//Get client connection
+                    Task.Run(() => {
+                        Console.WriteLine("ProcessNewClient");
                         ProcessNewClient(client);
-                    }
-                    catch (Exception e)
-                    {
-                        break;
-                    }
+                    });
                 }
             });
         }
@@ -73,33 +67,31 @@ namespace VCAServer
 
         private void ProcessNewClient(TcpClient client)
         {
-            Task.Run(() =>
+            NetworkStream netStream = null;
+            try
             {
-                NetworkStream netStream = null; 
-                try
+                netStream = client.GetStream();
+                while (true)
                 {
-                    netStream = client.GetStream();
-                    while (true)
-                    {
-                        byte[] frame = Framer.nextFrameByLength(netStream);
-                        vca metadata = MsgCoder.fromWire(frame);
-                        _queue.Add(metadata);
+                    byte[] frame = Framer.nextFrameByLength(netStream);
+                    vca metadata = MsgCoder.fromWire(frame);
+                    _queue.Add(metadata);
                         
-                    }
                 }
-                catch (Exception error)
-                {
-                    Debug.WriteLine("Proccess Client Exception: " + error.Message);
-                }
-                finally
-                {
-                    if (netStream != null)
-                        netStream.Close();
-                    if (client != null)
-                        client.Close();
-                }
+            }
+            catch (IOException error)
+            {
+                Console.WriteLine("Proccess Client Exception: " + error.Message);
+            }
+            finally
+            {
+                if (netStream != null)
+                    netStream.Close();
+                if (client != null)
+                    client.Close();
+                
+            }
 
-            });
         }
 
         private void MonitorQueue()
@@ -110,7 +102,7 @@ namespace VCAServer
                 {
                     vca frame = _queue.Take();
 
-                    if(frame.events == null)
+                    if (frame.events == null)
                     {
                         Console.WriteLine("event null");
                     }
