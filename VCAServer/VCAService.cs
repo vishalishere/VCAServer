@@ -75,7 +75,7 @@ namespace VCAServer
         {
             Task.Run(() =>
             {
-                NetworkStream netStream = null;
+                NetworkStream netStream = null; 
                 try
                 {
                     netStream = client.GetStream();
