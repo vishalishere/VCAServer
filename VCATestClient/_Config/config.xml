@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<root>
+  <Camera>rtsp://192.168.2.112:554/ch0_unicast_firststream</Camera>
+  <Server>localhost</Server>
+  <ServerPort>9001</ServerPort>
+</root>
