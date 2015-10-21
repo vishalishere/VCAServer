@@ -12,6 +12,7 @@ namespace VCACommon
         private static byte[] FrameBuffer = new byte[1024 * 1024 ];
         public static byte[] nextFrameByLength(Stream input)
         {
+            //TODO: add magic code
             byte[] buffer = new byte[4];
                 
             //读取长度
