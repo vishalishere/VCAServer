@@ -91,6 +91,8 @@ namespace VCACommon
                 this.schema_versionField = value;
             }
         }
+
+        public string cam_ip { get; set; }
     }
 
     /// <remarks/>

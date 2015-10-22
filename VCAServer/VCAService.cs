@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
-using Newtonsoft.Json;
+
 using VCACommon;
 
 namespace VCAServer
@@ -98,27 +98,18 @@ namespace VCAServer
 
         private void MonitorQueue()
         {
+            XmlSerializer serializer = new XmlSerializer(typeof(vca));
             while (true)
             {
                 try
                 {
                     vca frame = _queue.Take();
-
-                    if (frame.events == null)
+                    Console.WriteLine("-----------------------------");
+                    using(StringWriter sw = new StringWriter())
                     {
-                        Console.WriteLine("event null");
+                        serializer.Serialize(sw, frame);
+                        Console.WriteLine(sw.ToString());
                     }
-                    else
-                    {
-                        Console.WriteLine(frame.schema_version);
-                        Console.WriteLine("events " + frame.events.Length);
-                        Console.WriteLine(JsonConvert.SerializeObject(frame.events));
-                        Console.WriteLine("objects " + frame.objects.Length);
-                        Console.WriteLine(JsonConvert.SerializeObject(frame.objects));
-                        Console.WriteLine("-----------");
-
-                    }
-
 
                 }
                 catch (Exception)
