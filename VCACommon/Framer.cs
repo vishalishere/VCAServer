@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -10,9 +11,8 @@ namespace VCACommon
 {
     public class Framer
     {
-        private  byte[] FrameBuffer = new byte[1024 * 1024 ];
+        private  byte[] FrameBuffer = new byte[1024 * 5]; //5k
         private Stream input;
-
         public static string MagicString = "vca_meta";
         public static byte[] MagicCode = Encoding.ASCII.GetBytes(MagicString);
 
@@ -47,48 +47,56 @@ namespace VCACommon
 
         public byte[] nextFrameByMagicCode()
         {
+            //find magic code
+            int readBytes = 0;
+            int magicStart = -1;
+            int count = 0;
+            while (true)
+            {
+                count = input.Read(FrameBuffer, readBytes, 100);
+                if (count == 0)
+                    throw new EndOfStreamException("No data any more!!!");
+
+                readBytes += count;
+                magicStart = FrameBuffer.Find(MagicCode);
+                if (magicStart != -1 && magicStart < readBytes)
+                    break;
+            }
             //read magic code
-            byte[] buffer = new byte[8];
-            
-            int readBytes = input.Read(buffer,0, 8);
-            
-            while(readBytes < 8)
+            byte[] magiccode = new byte[8];
+            Array.Copy(FrameBuffer, magicStart, magiccode, 0, 8);
+            Debug.Assert(magiccode.SequenceEqual(MagicCode), "Find magic code error!!!!");
+
+            //read data length 
+            if (magicStart + 12 > readBytes) // datalength is not include 
             {
-                int count = input.Read(buffer, readBytes, 8 - readBytes);
-                if (count == 0) throw new EndOfStreamException("Cannt read data any more!!!");
+                count = input.Read(FrameBuffer, readBytes, 4);
+                Debug.Assert(count != 4, "Read datalen  not completed!!!");
+                if(count == 0)
+                    throw new EndOfStreamException("No data any more!!!");
                 readBytes += count;
             }
-
-            if (!buffer.SequenceEqual(MagicCode)) throw new Exception("Illegal Connection");
-           
-            //读取长度
-            readBytes = input.Read(buffer, 0, 4);
-            
-            while (readBytes < 4)
-            {                
-                int count = input.Read(buffer, readBytes, 4 - readBytes);
-                if (count == 0) throw new EndOfStreamException("Cannt read data any more!!!");
-                readBytes += count;
-
-            }
-
-            int length = BitConverter.ToInt32(buffer, 0);
-
-            readBytes = input.Read(FrameBuffer, 0, length);
-            while (readBytes < length)
+            Debug.Assert(BitConverter.IsLittleEndian, "Not BigEndian");
+            byte[] len = new byte[4];
+            Array.Copy(FrameBuffer, magicStart + 8, len, 0, 4);
+            int dataLength = BitConverter.ToInt32(len, 0);
+            if(!BitConverter.IsLittleEndian)
             {
-                int count = input.Read(FrameBuffer, readBytes, length - readBytes);
-                if (count == 0) throw new EndOfStreamException("Cannt read data any more!!!");
-                readBytes += count;
+                dataLength = (len[0] << 24) | (len[1] << 16) | (len[2] << 8) | len[3];
             }
-            byte[] frame = new byte[length];
-            Array.Copy(FrameBuffer, frame, length);
+
+            //read reminder
+            int reminder = dataLength - readBytes + magicStart + 12;
+            count = input.Read(FrameBuffer, readBytes, reminder);
+            Debug.Assert(count == reminder, string.Format("expected {0} actual {1}", reminder, count));
+            if (count == 0)
+                throw new EndOfStreamException("No data any more!!!");
+            readBytes += count;
+
+            byte[] frame = new byte[dataLength];
+            Array.Copy(FrameBuffer, magicStart + 12, frame,0, dataLength);
             return frame;
-
-
         }
-
-        
     }
 
     static class Extensions

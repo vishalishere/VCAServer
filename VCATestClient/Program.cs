@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -31,12 +32,17 @@ namespace VCATestClient
                 client = new TcpClient(AppConfig.Server, AppConfig.ServerPort);
                 Console.WriteLine("Connected to server...");
                 netStream = client.GetStream();
+               
+                byte[] bla = Encoding.ASCII.GetBytes("aaaaaaaaaaaadfasdfasdfasdfasdfasdfasdfasdfasfdasdfasdf");
                 while (true)
                 {
                     string metadata = MetaDataQueue.Take();
                     byte[] frame = MsgCoder.toWire(metadata);
-
+                    //测试前后插入垃圾数据 
+                    netStream.Write(bla, 0, bla.Length);
                     netStream.Write(frame, 0, frame.Length);
+                    netStream.Write(bla, 0, bla.Length);
+
                 }
             }
             catch (SocketException se)
