@@ -12,7 +12,8 @@ namespace VCACommon
     public class MsgCoder
     {
         public static XmlSerializer serializer = new XmlSerializer(typeof(vca));
-        private static byte[] BUFF = new byte[1024*1024];
+        public static string MagicString = "vca_meta";
+        public static byte[] MagicCode = Encoding.ASCII.GetBytes(MagicString);
 
         public static vca fromWire(byte[] input)
         {
@@ -31,14 +32,15 @@ namespace VCACommon
         public static byte[] toWire(string vca)
         {
             int datalength = vca.Length;
-            byte[] frame = new byte[datalength + 4];
+            byte[] frame = new byte[datalength + 4 + 8];
             Console.WriteLine("datalength: " + datalength);
 
             byte[] len = BitConverter.GetBytes(datalength);
             byte[] data = Encoding.ASCII.GetBytes(vca);
             Debug.Assert(data.Length == datalength);
-            Array.Copy(len, frame, 4);
-            Array.Copy(data,0, frame,4 , datalength);
+            Array.Copy(MagicCode, frame, 8);
+            Array.Copy(len,0 ,frame,8, 4);
+            Array.Copy(data,0, frame,12 , datalength);
             return frame;
         }
     }

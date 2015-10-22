@@ -71,15 +71,17 @@ namespace VCAServer
             try
             {
                 netStream = client.GetStream();
+                
+                Framer framer = new Framer(netStream);
                 while (true)
                 {
-                    byte[] frame = Framer.nextFrameByLength(netStream);
+                    byte[] frame = framer.nextFrameByMagicCode();
                     vca metadata = MsgCoder.fromWire(frame);
                     _queue.Add(metadata);
                         
                 }
             }
-            catch (IOException error)
+            catch (Exception error)
             {
                 Console.WriteLine("Proccess Client Exception: " + error.Message);
             }
