@@ -51,11 +51,17 @@ namespace VCACommon
             int readBytes = 0;
             int magicStart = -1;
             int count = 0;
+            DateTime lastRead = DateTime.Now;
             while (true)
             {
                 count = input.Read(FrameBuffer, readBytes, 100);
-                if (count == 0)
-                    throw new EndOfStreamException("No data any more!!!");
+
+                if (count > 0)
+                {
+                    lastRead = DateTime.Now;
+                }
+                else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 3)
+                    throw new EndOfStreamException("No magic code!!!");
 
                 readBytes += count;
                 magicStart = FrameBuffer.Find(MagicCode);
@@ -70,11 +76,20 @@ namespace VCACommon
             //read data length 
             if (magicStart + 12 > readBytes) // datalength is not include 
             {
-                count = input.Read(FrameBuffer, readBytes, 4);
-                Debug.Assert(count != 4, "Read datalen  not completed!!!");
-                if(count == 0)
-                    throw new EndOfStreamException("No data any more!!!");
-                readBytes += count;
+                int fourByteToRead = 4;
+                while (fourByteToRead > 0)
+                {
+                    count = input.Read(FrameBuffer, readBytes, 4);
+                    readBytes += count;
+                    fourByteToRead -= count;
+
+                    if (count > 0)
+                    {
+                        lastRead = DateTime.Now;
+                    }
+                    else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 10)
+                        throw new EndOfStreamException("Read length error!!!");
+                }
             }
             Debug.Assert(BitConverter.IsLittleEndian, "Not BigEndian");
             byte[] len = new byte[4];
@@ -88,11 +103,22 @@ namespace VCACommon
             //read reminder
             int reminder = dataLength - readBytes + magicStart + 12;
             count = input.Read(FrameBuffer, readBytes, reminder);
-            Debug.Assert(count == reminder, string.Format("expected {0} actual {1}", reminder, count));
-            if (count == 0)
-                throw new EndOfStreamException("No data any more!!!");
             readBytes += count;
-
+            lastRead = DateTime.Now;
+            while (reminder > 0)
+            {
+                count = input.Read(FrameBuffer, readBytes, reminder);
+                reminder -= count;
+                readBytes += count;
+                
+                if(count > 0)
+                {
+                    lastRead = DateTime.Now;
+                }
+                else if(DateTime.Now.Subtract(lastRead).TotalSeconds > 10)
+                    throw new EndOfStreamException("No metadata any more!!!");
+            }
+            
             byte[] frame = new byte[dataLength];
             Array.Copy(FrameBuffer, magicStart + 12, frame,0, dataLength);
             return frame;

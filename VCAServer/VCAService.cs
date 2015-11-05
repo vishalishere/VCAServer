@@ -44,19 +44,18 @@ namespace VCAServer
                 Environment.Exit(se.ErrorCode);
             }
 
-            Task.Run(() => { MonitorQueue(); });
+            Task.Factory.StartNew(() => { MonitorQueue(); }, TaskCreationOptions.LongRunning);
             //Run forever for accepting and servincing connections 
-            Task.Run(() =>
+            Task.Factory.StartNew(() =>
             {
                 while (true)
                 {
                     TcpClient client = _tcpListener.AcceptTcpClient();//Get client connection
-                    Task.Run(() => {
-                        LogInfo("ProcessNewClient");
+                    Task.Factory.StartNew(() => {
                         ProcessNewClient(client);
-                    });
+                    }, TaskCreationOptions.LongRunning);
                 }
-            });
+            }, TaskCreationOptions.LongRunning);
         }
 
         public void Stop()
@@ -67,6 +66,7 @@ namespace VCAServer
 
         private void ProcessNewClient(TcpClient client)
         {
+            LogInfo("ProcessNewClient: " + client.Client.RemoteEndPoint);
             NetworkStream netStream = null;
             try
             {
@@ -77,13 +77,17 @@ namespace VCAServer
                 {
                     byte[] frame = framer.nextFrameByMagicCode();
                     vca metadata = MsgCoder.fromWire(frame);
+                    if (metadata == null)
+                        break;
+
                     _queue.Add(metadata);
                         
                 }
             }
             catch (Exception error)
             {
-                LogError("Proccess Client Exception: " + error.Message);
+                LogError("Proccess Client Exception: " + error.Message + 
+                         "\n断开连接 " + client.Client.RemoteEndPoint);
             }
             finally
             {
@@ -99,18 +103,22 @@ namespace VCAServer
         private void MonitorQueue()
         {
             XmlSerializer serializer = new XmlSerializer(typeof(vca));
+            int count = 0;
             while (true)
             {
                 try
                 {
                     vca frame = _queue.Take();
-                    Console.WriteLine("-----------------------------");
-                    using(StringWriter sw = new StringWriter())
+                    if (count % 10 == 0)
                     {
-                        serializer.Serialize(sw, frame);
-                        Console.WriteLine(sw.ToString());
+                        Console.WriteLine("vca meta " + frame.cam_ip );
                     }
-
+                    if (count >= 1000)
+                    {
+                        count = 0;
+                        Console.Clear();
+                    }
+                    count++;
                 }
                 catch (Exception)
                 {
