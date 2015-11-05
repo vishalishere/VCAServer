@@ -36,11 +36,11 @@ namespace VCAServer
                 //Create a TCPListener to accept client connections
                 _tcpListener = new TcpListener(IPAddress.Any, servPort);
                 _tcpListener.Start();
-                Debug.WriteLine("Listening on port:" + servPort);
+                LogInfo("Listening on port:" + servPort);
             }
             catch (SocketException se)
             {
-                ErrorLog.Instance.Log(se, "端口被占用");
+                LogInfo("端口被占用");
                 Environment.Exit(se.ErrorCode);
             }
 
@@ -52,7 +52,7 @@ namespace VCAServer
                 {
                     TcpClient client = _tcpListener.AcceptTcpClient();//Get client connection
                     Task.Run(() => {
-                        Console.WriteLine("ProcessNewClient");
+                        LogInfo("ProcessNewClient");
                         ProcessNewClient(client);
                     });
                 }
@@ -83,7 +83,7 @@ namespace VCAServer
             }
             catch (Exception error)
             {
-                Console.WriteLine("Proccess Client Exception: " + error.Message);
+                LogError("Proccess Client Exception: " + error.Message);
             }
             finally
             {
@@ -117,6 +117,20 @@ namespace VCAServer
                     break;
                 }
             }
+        }
+
+        private void LogInfo(string info)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(info);
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        private void LogError(string error)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(error);
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
     }
 }
