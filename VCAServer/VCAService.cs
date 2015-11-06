@@ -20,11 +20,11 @@ namespace VCAServer
 
         private BlockingCollection<vca> _queue = new BlockingCollection<vca>(new ConcurrentQueue<vca>());
         private TcpListener _tcpListener = null;
-        private XmlSerializer serializer = null;
+        private CounterService counterServer;
 
         public VCAService()
         {
-            serializer = new XmlSerializer(typeof(vca));
+            counterServer = new CounterService();
         }
 
 
@@ -36,11 +36,11 @@ namespace VCAServer
                 //Create a TCPListener to accept client connections
                 _tcpListener = new TcpListener(IPAddress.Any, servPort);
                 _tcpListener.Start();
-                LogInfo("Listening on port:" + servPort);
+                CLog.Info("Listening on port:" + servPort);
             }
             catch (SocketException se)
             {
-                LogInfo("端口被占用");
+                CLog.Error("端口被占用");
                 Environment.Exit(se.ErrorCode);
             }
 
@@ -51,9 +51,11 @@ namespace VCAServer
                 while (true)
                 {
                     TcpClient client = _tcpListener.AcceptTcpClient();//Get client connection
-                    Task.Factory.StartNew(() => {
-                        ProcessNewClient(client);
-                    }, TaskCreationOptions.LongRunning);
+                    Task.Factory.StartNew((arg) => 
+                    {
+                        TcpClient localClient = (TcpClient)arg;
+                        ProcessNewClient(localClient);
+                    }, client);
                 }
             }, TaskCreationOptions.LongRunning);
         }
@@ -62,11 +64,12 @@ namespace VCAServer
         {
             _tcpListener.Stop();
             _queue.CompleteAdding();
+            counterServer.Dispose();
         }
 
         private void ProcessNewClient(TcpClient client)
         {
-            LogInfo("ProcessNewClient: " + client.Client.RemoteEndPoint);
+            CLog.Info("ProcessNewClient: " + client.Client.RemoteEndPoint);
             NetworkStream netStream = null;
             try
             {
@@ -80,13 +83,16 @@ namespace VCAServer
                     if (metadata == null)
                         break;
 
-                    _queue.Add(metadata);
+                    if (metadata.objects != null && metadata.objects.Length > 0)
+                    {
+                        _queue.Add(metadata);
+                    }
                         
                 }
             }
             catch (Exception error)
             {
-                LogError("Proccess Client Exception: " + error.Message + 
+               CLog.Error("Proccess Client Exception: " + error.Message + 
                          "\n断开连接 " + client.Client.RemoteEndPoint);
             }
             finally
@@ -102,43 +108,39 @@ namespace VCAServer
 
         private void MonitorQueue()
         {
-            XmlSerializer serializer = new XmlSerializer(typeof(vca));
             int count = 0;
             while (true)
             {
                 try
                 {
-                    vca frame = _queue.Take();
+                    vca metadata = _queue.Take();
+
+                    if (metadata.events != null && metadata.events.Length > 0)
+                    {
+                        counterServer.Add(metadata);
+                    }
+
+
                     if (count % 10 == 0)
                     {
-                        Console.WriteLine("vca meta " + frame.cam_ip );
+                        CLog.Debug("metadata from " + metadata.cam_ip);
                     }
-                    if (count >= 1000)
-                    {
-                        count = 0;
-                        Console.Clear();
-                    }
-                    count++;
+
                 }
                 catch (Exception)
                 {
                     break;
                 }
+               
+                if (count >= 1000)
+                {
+                    count = 0;
+                    Console.Clear();
+                }
+                count++;
             }
         }
 
-        private void LogInfo(string info)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(info);
-            Console.ForegroundColor = ConsoleColor.Gray;
-        }
-
-        private void LogError(string error)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(error);
-            Console.ForegroundColor = ConsoleColor.Gray;
-        }
+       
     }
 }
