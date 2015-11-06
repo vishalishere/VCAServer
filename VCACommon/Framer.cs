@@ -119,7 +119,7 @@ namespace VCACommon
                     throw new EndOfStreamException("No metadata any more!!!");
             }
             
-            byte[] frame = new byte[dataLength];
+            byte[] frame = new byte[dataLength + 1];
             Array.Copy(FrameBuffer, magicStart + 12, frame,0, dataLength);
             return frame;
         }
