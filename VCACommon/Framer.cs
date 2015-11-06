@@ -11,7 +11,7 @@ namespace VCACommon
 {
     public class Framer
     {
-        private  byte[] FrameBuffer = new byte[1024 * 5]; //5k
+        private  byte[] FrameBuffer = new byte[1024 * 50]; //5k
         private Stream input;
         public static string MagicString = "vca_meta";
         public static byte[] MagicCode = Encoding.ASCII.GetBytes(MagicString);
