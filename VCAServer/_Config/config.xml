@@ -2,4 +2,6 @@
 <root>
   <Server>http://localhost:4468/</Server>
   <CounterApi>api/createcounter</CounterApi>
+  <HeatPointApi>api/createheatpoint</HeatPointApi>
+
 </root>

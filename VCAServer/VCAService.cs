@@ -12,6 +12,7 @@ using System.Xml;
 using System.Xml.Serialization;
 
 using VCACommon;
+using VCAServer.HttpService;
 
 namespace VCAServer
 {
@@ -21,10 +22,12 @@ namespace VCAServer
         private BlockingCollection<vca> _queue = new BlockingCollection<vca>(new ConcurrentQueue<vca>());
         private TcpListener _tcpListener = null;
         private CounterService counterServer;
+        private HeatMapService heatMapService;
 
         public VCAService()
         {
             counterServer = new CounterService();
+            heatMapService = new HeatMapService();
         }
 
 
@@ -119,7 +122,8 @@ namespace VCAServer
                     {
                         counterServer.Add(metadata);
                     }
-
+                    heatMapService.Add(metadata);
+                    
 
                     if (count % 10 == 0)
                     {

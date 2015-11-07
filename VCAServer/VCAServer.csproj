@@ -54,6 +54,7 @@
     <Compile Include="CLog.cs" />
     <Compile Include="ErrorLog.cs" />
     <Compile Include="HttpService\CounterService.cs" />
+    <Compile Include="HttpService\HeatMapService.cs" />
     <Compile Include="HttpService\JsonMessage.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

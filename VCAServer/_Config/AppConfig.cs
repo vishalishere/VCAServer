@@ -13,12 +13,15 @@ namespace VCAServer
 
         public static string CounterApi { get; set; }
 
-         static AppConfig()
+        public static string HeatPointApi { get; set; }
+
+        static AppConfig()
         {
             string appRoot = AppDomain.CurrentDomain.BaseDirectory;
             var doc = XDocument.Load(appRoot + "_Config/config.xml");
             AppConfig.Server = doc.Root.Element("Server").Value;
             AppConfig.CounterApi = doc.Root.Element("CounterApi").Value;
+            AppConfig.HeatPointApi = doc.Root.Element("HeatPointApi").Value;
         }
     }
 }

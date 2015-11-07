@@ -45,7 +45,6 @@ namespace VCAServer
                 if(!_counterMap.ContainsKey(counter.name))
                 {
                     _counterMap.Add(counter.name, counter.val);
-                    CLog.Debug("map add");
                 }
                 else if (_counterMap[counter.name] == counter.val)
                 {
@@ -54,7 +53,6 @@ namespace VCAServer
                 else
                 {
                     _counterMap[counter.name] = counter.val;
-                    CLog.Debug(counter.name);
                 }
               
                 if(valueChanged)
