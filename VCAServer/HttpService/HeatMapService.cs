@@ -47,6 +47,8 @@ namespace VCAServer.HttpService
                 var bb = box.bb;
                 heatPoint.X = (bb.x + bb.w / 2) / 65535.0f;
                 heatPoint.Y = (bb.y + bb.h / 2) / 65535.0f;
+                log.Debug("Add heatpoint");
+
                 _queue.Add(heatPoint);
                 
             }

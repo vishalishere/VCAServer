@@ -57,7 +57,7 @@ namespace VCAServer
               
                 if(valueChanged)
                 {
-                   
+                    log.Debug("Add Counter: " + counter.name);
                     _queue.Add(new Counter
                     {
                         Name = counter.name,

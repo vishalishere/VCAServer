@@ -111,24 +111,18 @@ namespace VCAServer
 
         private void MonitorQueue()
         {
-            int count = 0;
             while (true)
             {
                 try
                 {
                     vca metadata = _queue.Take();
 
+                    
                     if (metadata.events != null && metadata.events.Length > 0)
                     {
                         counterServer.Add(metadata);
                     }
                     heatMapService.Add(metadata);
-                    
-
-                    if (count % 10 == 0)
-                    {
-                        CLog.Debug("metadata from " + metadata.cam_ip);
-                    }
 
                 }
                 catch (Exception)
@@ -136,12 +130,7 @@ namespace VCAServer
                     break;
                 }
                
-                if (count >= 1000)
-                {
-                    count = 0;
-                    Console.Clear();
-                }
-                count++;
+              
             }
         }
 
