@@ -57,7 +57,7 @@ namespace VCAServer
               
                 if(valueChanged)
                 {
-                    log.Debug("Add Counter: " + counter.name);
+                    log.Debug("Add Counter: " + counter.name + " from: " + vca.cam_ip);
                     _queue.Add(new Counter
                     {
                         Name = counter.name,
@@ -75,13 +75,7 @@ namespace VCAServer
                 try
                 {
                     Counter counter = _queue.Take();
-                    JsonMessage message = SaveEventToServerAsync(counter).Result;
-
-                    if (message != null && message.Code == 0)
-                    {
-                        CLog.Debug(message.Message);
-                    }
-
+                    SaveEventToServerAsync(counter).GetAwaiter().GetResult();
                 }
                 catch (Exception)
                 {
@@ -91,7 +85,7 @@ namespace VCAServer
         }
 
 
-        public async Task<JsonMessage> SaveEventToServerAsync(Counter input)
+        public async Task SaveEventToServerAsync(Counter input)
         {
             try
             {
@@ -99,14 +93,11 @@ namespace VCAServer
                 var response = await _http.PostAsync(AppConfig.CounterApi, content);
 
                 response.EnsureSuccessStatusCode();
-                var resultJson = await response.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<JsonMessage>(resultJson);
             }
             catch (Exception tce)
             {
                 Console.WriteLine(tce.Message);
             }
-            return null;
         }
 
         public void Dispose()

@@ -36,7 +36,7 @@ namespace VCAServer.HttpService
         {
             if (vca.objects == null || vca.objects.Length == 0)
                 return;
-            if (DateTime.Now.Subtract(lastAdd).TotalMinutes < 10)
+            if (DateTime.Now.Subtract(lastAdd).TotalSeconds < 10)
                 return;
 
             foreach (var box in vca.objects)
@@ -47,11 +47,12 @@ namespace VCAServer.HttpService
                 var bb = box.bb;
                 heatPoint.X = (bb.x + bb.w / 2) / 65535.0f;
                 heatPoint.Y = (bb.y + bb.h / 2) / 65535.0f;
-                log.Debug("Add heatpoint");
+                
 
                 _queue.Add(heatPoint);
                 
             }
+            log.Debug("Add heatpoint");
             lastAdd = DateTime.Now;
         }
 
