@@ -36,7 +36,7 @@ namespace VCAServer.HttpService
         {
             if (vca.objects == null || vca.objects.Length == 0)
                 return;
-            if (DateTime.Now.Subtract(lastAdd).TotalSeconds < 10)
+            if (DateTime.Now.Subtract(lastAdd).TotalMinutes < 1)
                 return;
 
             foreach (var box in vca.objects)

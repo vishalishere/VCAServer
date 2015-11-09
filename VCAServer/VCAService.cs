@@ -85,6 +85,8 @@ namespace VCAServer
                     vca metadata = MsgCoder.fromWire(frame);
                     if (metadata == null)
                         break;
+                    if (DateTime.Now.Hour < 7 || DateTime.Now.Hour > 22)
+                        continue;
 
                     if (metadata.objects != null && metadata.objects.Length > 0)
                     {
