@@ -54,11 +54,11 @@ namespace VCAServer
                 while (true)
                 {
                     TcpClient client = _tcpListener.AcceptTcpClient();//Get client connection
-                    Task.Factory.StartNew((arg) => 
-                    {
-                        TcpClient localClient = (TcpClient)arg;
-                        ProcessNewClient(localClient);
-                    }, client);
+                    //Task.Factory.StartNew((arg) => 
+                    //{
+                     //TcpClient localClient = (TcpClient)arg;
+                        ProcessNewClient(client);
+                    //}, client);
                 }
             }, TaskCreationOptions.LongRunning);
         }
@@ -119,7 +119,7 @@ namespace VCAServer
                 {
                     vca metadata = _queue.Take();
 
-                    
+                    Console.WriteLine("metadata from " + metadata.cam_ip);
                     if (metadata.events != null && metadata.events.Length > 0)
                     {
                         counterServer.Add(metadata);
