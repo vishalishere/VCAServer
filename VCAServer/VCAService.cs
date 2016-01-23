@@ -73,6 +73,7 @@ namespace VCAServer
         private void ProcessNewClient(TcpClient client)
         {
             CLog.Info("ProcessNewClient: " + client.Client.RemoteEndPoint);
+            CLog.Info("解析metadata....");
             NetworkStream netStream = null;
             try
             {
@@ -87,12 +88,8 @@ namespace VCAServer
                         break;
                     if (DateTime.Now.Hour < 7 || DateTime.Now.Hour > 22)
                         continue;
-
-                    if (metadata.objects != null && metadata.objects.Length > 0)
-                    {
-                        _queue.Add(metadata);
-                    }
-                        
+                     _queue.Add(metadata);
+                    
                 }
             }
             catch (Exception error)
@@ -118,12 +115,7 @@ namespace VCAServer
                 try
                 {
                     vca metadata = _queue.Take();
-
-                    Console.WriteLine("metadata from " + metadata.cam_ip);
-                    if (metadata.events != null && metadata.events.Length > 0)
-                    {
-                        counterServer.Add(metadata);
-                    }
+                    counterServer.Add(metadata);
                     heatMapService.Add(metadata);
 
                 }

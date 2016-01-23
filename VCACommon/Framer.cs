@@ -52,76 +52,87 @@ namespace VCACommon
             int magicStart = -1;
             int count = 0;
             DateTime lastRead = DateTime.Now;
-            while (true)
+            try
             {
-                count = input.Read(FrameBuffer, readBytes, 100);
-
-                if (count > 0)
+                Array.Clear(FrameBuffer, 0, FrameBuffer.Length);
+                while (true)
                 {
-                    lastRead = DateTime.Now;
-                }
-                else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 3)
-                    throw new EndOfStreamException("No magic code!!!");
+                    count = input.Read(FrameBuffer, readBytes, 100);
+                    if (count > 0)
+                    {
+                        lastRead = DateTime.Now;
+                    }
+                    else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 3)
+                        throw new EndOfStreamException("No magic code!!!");
 
-                readBytes += count;
-                magicStart = FrameBuffer.Find(MagicCode);
-                if (magicStart != -1 && magicStart < readBytes)
-                    break;
-            }
-            //read magic code
-            byte[] magiccode = new byte[8];
-            Array.Copy(FrameBuffer, magicStart, magiccode, 0, 8);
-            Debug.Assert(magiccode.SequenceEqual(MagicCode), "Find magic code error!!!!");
-
-            //read data length 
-            if (magicStart + 12 > readBytes) // datalength is not include 
-            {
-                int fourByteToRead = 4;
-                while (fourByteToRead > 0)
-                {
-                    count = input.Read(FrameBuffer, readBytes, 4);
                     readBytes += count;
-                    fourByteToRead -= count;
+                    magicStart = FrameBuffer.Find(MagicCode);
+                    if (magicStart != -1 && magicStart < readBytes)
+                        break;
+                }
+                //read magic code
+                byte[] magiccode = new byte[8];
+                Array.Copy(FrameBuffer, magicStart, magiccode, 0, 8);
+                Debug.Assert(magiccode.SequenceEqual(MagicCode), "Find magic code error!!!!");
+
+                //read data length 
+                if (magicStart + 12 > readBytes) // datalength is not include 
+                {
+                    int fourByteToRead = 4;
+                    while (fourByteToRead > 0)
+                    {
+                        count = input.Read(FrameBuffer, readBytes, 4);
+                        readBytes += count;
+                        fourByteToRead -= count;
+
+                        if (count > 0)
+                        {
+                            lastRead = DateTime.Now;
+                        }
+                        else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 10)
+                            throw new EndOfStreamException("Read length error!!!");
+                    }
+                }
+                Debug.Assert(BitConverter.IsLittleEndian, "Not BigEndian");
+                byte[] len = new byte[4];
+                Array.Copy(FrameBuffer, magicStart + 8, len, 0, 4);
+                int dataLength = BitConverter.ToInt32(len, 0);
+                if (!BitConverter.IsLittleEndian)
+                {
+                    dataLength = (len[0] << 24) | (len[1] << 16) | (len[2] << 8) | len[3];
+                }
+
+                //read reminder
+                int reminder = dataLength - readBytes + magicStart + 12;
+                count = input.Read(FrameBuffer, readBytes, reminder);
+                readBytes += count;
+                reminder -= count;
+                lastRead = DateTime.Now;
+                while (reminder > 0)
+                {
+                    count = input.Read(FrameBuffer, readBytes, reminder);
+                    reminder -= count;
+                    readBytes += count;
 
                     if (count > 0)
                     {
                         lastRead = DateTime.Now;
                     }
                     else if (DateTime.Now.Subtract(lastRead).TotalSeconds > 10)
-                        throw new EndOfStreamException("Read length error!!!");
+                        throw new EndOfStreamException("No metadata any more!!!");
                 }
+             
+                byte[] frame = new byte[dataLength];
+                Array.Copy(FrameBuffer, magicStart + 12, frame, 0, dataLength);
+                return frame;
             }
-            Debug.Assert(BitConverter.IsLittleEndian, "Not BigEndian");
-            byte[] len = new byte[4];
-            Array.Copy(FrameBuffer, magicStart + 8, len, 0, 4);
-            int dataLength = BitConverter.ToInt32(len, 0);
-            if(!BitConverter.IsLittleEndian)
+            catch (Exception e)
             {
-                dataLength = (len[0] << 24) | (len[1] << 16) | (len[2] << 8) | len[3];
-            }
-
-            //read reminder
-            int reminder = dataLength - readBytes + magicStart + 12;
-            count = input.Read(FrameBuffer, readBytes, reminder);
-            readBytes += count;
-            lastRead = DateTime.Now;
-            while (reminder > 0)
-            {
-                count = input.Read(FrameBuffer, readBytes, reminder);
-                reminder -= count;
-                readBytes += count;
                 
-                if(count > 0)
-                {
-                    lastRead = DateTime.Now;
-                }
-                else if(DateTime.Now.Subtract(lastRead).TotalSeconds > 10)
-                    throw new EndOfStreamException("No metadata any more!!!");
+                var appRoot = AppDomain.CurrentDomain.BaseDirectory;
+                File.WriteAllText(appRoot + "vcadump.txt", Encoding.ASCII.GetString(FrameBuffer));
+                throw e;
             }
-            
-            byte[] frame = new byte[dataLength + 1];
-            Array.Copy(FrameBuffer, magicStart + 12, frame,0, dataLength);
-            return frame;
         }
     }
 

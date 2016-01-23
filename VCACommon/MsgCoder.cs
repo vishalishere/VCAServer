@@ -24,7 +24,8 @@ namespace VCACommon
             catch(Exception)
             {
                 Console.WriteLine("Deserialize Error" + Encoding.ASCII.GetString(input));
-                
+                File.WriteAllText(AppDomain.CurrentDomain.BaseDirectory + "vcadump.txt", Encoding.ASCII.GetString(input));
+
                 return null;
             }
         }

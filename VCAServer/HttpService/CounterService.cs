@@ -57,7 +57,6 @@ namespace VCAServer
               
                 if(valueChanged)
                 {
-                    log.Debug("Add Counter: " + counter.name + " from: " + vca.cam_ip);
                     _queue.Add(new Counter
                     {
                         Name = counter.name,
