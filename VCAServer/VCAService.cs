@@ -18,6 +18,7 @@ namespace VCAServer
 {
     public class VCAService
     {
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private BlockingCollection<vca> _queue = new BlockingCollection<vca>(new ConcurrentQueue<vca>());
         private TcpListener _tcpListener = null;
@@ -39,11 +40,11 @@ namespace VCAServer
                 //Create a TCPListener to accept client connections
                 _tcpListener = new TcpListener(IPAddress.Any, servPort);
                 _tcpListener.Start();
-                CLog.Info("Listening on port:" + servPort);
+                log.Info("Listening on port:" + servPort);
             }
             catch (SocketException se)
             {
-                CLog.Error("端口被占用");
+                log.Info("端口被占用");
                 Environment.Exit(se.ErrorCode);
             }
 
@@ -72,8 +73,8 @@ namespace VCAServer
 
         private void ProcessNewClient(TcpClient client)
         {
-            CLog.Info("ProcessNewClient: " + client.Client.RemoteEndPoint);
-            CLog.Info("解析metadata....");
+            log.Info(" ProcessNewClient: " + client.Client.RemoteEndPoint);
+            log.Info("解析metadata....");
             NetworkStream netStream = null;
             try
             {
@@ -94,8 +95,8 @@ namespace VCAServer
             }
             catch (Exception error)
             {
-               CLog.Error("Proccess Client Exception: " + error.Message + 
-                         "\n断开连接 " + client.Client.RemoteEndPoint);
+                log.Error(" Proccess Client Exception: " + error.Message + 
+                         "\n断开连接 " + client.Client.RemoteEndPoint );
             }
             finally
             {
